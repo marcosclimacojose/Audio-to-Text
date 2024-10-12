@@ -1,0 +1,36 @@
+
+## -------------LECTURA DE AUDIOS/JM----------------
+
+from pydub import AudioSegment
+import speech_recognition as sr
+
+path = r"Pega ruta de audio\Nombre del Audio.wav"
+output_txt_path = r"Pega ruta donde se guardará el texto\Nombre del Audio.txt"
+
+# Inicializar el reconocedor de voz
+r = sr.Recognizer()
+
+# Cargar el archivo de audio
+audio = AudioSegment.from_wav(path)
+
+# Dividir el audio en chunks de 30 segundos
+chunks = audio[::30000]  # 30000ms = 30s
+
+# Procesar cada chunk
+for i, chunk in enumerate(chunks):
+    # Exportar el chunk a un archivo temporal
+    chunk_path = f"temp_chunk{i}.wav"
+    chunk.export(chunk_path, format="wav")
+    
+    # Reconocer el audio del chunk
+    with sr.AudioFile(chunk_path) as source:
+        audio_listened = r.listen(source)
+        try:
+            # Reconocer el contenido y agregarlo al archivo de texto
+            text = r.recognize_google(audio_listened, language="es-ES")
+            with open(output_txt_path, 'a', encoding='utf-8') as file:
+                file.write(text + " ")
+        except sr.UnknownValueError:
+            print(f"No se pudo entender el audio del chunk {i}")
+        except sr.RequestError as e:
+            print(f"No se pudo solicitar resultados desde el servicio de Google; {e}")
